@@ -1,109 +1,38 @@
-# 定义本地开发所需的服务。
+# 网页版只依赖 PostgreSQL，不再要求 Redis 或微信配置。
 services:
-  # PostgreSQL 数据库服务，服务名也作为容器网络主机名。
   postgres:
-    # 使用 PostgreSQL 16 Alpine 镜像。
     image: postgres:16-alpine
-    # 指定数据库容器名称。
-    container_name: training-pg
-    # 向数据库容器注入初始化环境变量。
     environment:
-      # 首次初始化数据库时创建的用户名。
       POSTGRES_USER: training
-      # 首次初始化使用的开发密码；修改变量不会自动修改已有数据卷中的密码。
-      POSTGRES_PASSWORD: training
-      # 首次初始化创建的数据库名称。
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?请在 .env 中设置数据库密码}
       POSTGRES_DB: training
-      # 中文排序与大小写
-      # 设置进程语言环境；并不单独保证中文排序规则。
-      LANG: C.UTF-8
-    # 声明发布到宿主机的端口。
-    ports:
-      # 将宿主机 5432 映射到数据库容器 5432。
-      - "5432:5432"
-    # 声明数据库数据卷挂载。
     volumes:
-      # 将命名卷挂载到数据库数据目录，重建容器后仍保留数据。
       - pgdata:/var/lib/postgresql/data
-    # 配置数据库就绪检查。
     healthcheck:
-      # 通过 pg_isready 判断数据库是否接受连接，不验证业务表是否已迁移。
       test: ["CMD-SHELL", "pg_isready -U training -d training"]
-      # 每隔 5 秒检查一次。
       interval: 5s
-      # 单次检查最多等待 3 秒。
       timeout: 3s
-      # 连续失败 12 次后标记不健康。
       retries: 12
+    restart: unless-stopped
 
-  # Redis 服务。
-  redis:
-    # 使用 Redis 7 Alpine 镜像。
-    image: redis:7-alpine
-    # 指定 Redis 容器名称。
-    container_name: training-redis
-    # 启用 AOF 持久化，将写操作记录到追加文件。
-    command: ["redis-server", "--appendonly", "yes"]
-    # 声明 Redis 发布端口。
-    ports:
-      # 将宿主机 6379 映射到 Redis 容器 6379。
-      - "6379:6379"
-    # 声明 Redis 数据卷挂载。
-    volumes:
-      # 持久化 Redis 的 /data 目录。
-      - redisdata:/data
-    # 配置 Redis 就绪检查。
-    healthcheck:
-      # 执行 Redis PING 命令检查服务。
-      test: ["CMD", "redis-cli", "ping"]
-      # 每隔 5 秒检查一次。
-      interval: 5s
-      # 单次检查最多等待 3 秒。
-      timeout: 3s
-      # 连续失败 12 次后标记不健康。
-      retries: 12
-
-  # API 应用服务；需要补齐 app 源码才能启动。
   api:
-    # 从当前目录的 Dockerfile 构建镜像。
     build: .
-    # 指定 API 容器名称。
-    container_name: training-api
-    # 声明加载环境变量文件。
     env_file:
-      # 读取本地 .env；该文件需从示例复制并配置，不应提交。
       - .env
-    # 覆盖应用容器的部分环境变量。
     environment:
-      # 容器内必须用服务名，不能用 localhost
-      # 容器通过 postgres 服务名访问数据库，不能用 localhost 访问其他容器。
-      DATABASE_URL: postgresql+psycopg://training:training@postgres:5432/training
-      # 容器通过 redis 服务名访问 Redis。
-      REDIS_URL: redis://redis:6379/0
-    # 声明 API 发布端口。
+      # URL 中使用 postgres 服务名；密码需使用字母数字以避免 URL 转义问题。
+      DATABASE_URL: postgresql+psycopg://training:${POSTGRES_PASSWORD:?请设置数据库密码}@postgres:5432/training
+      DATA_DIR: /app/data
     ports:
-      # 将宿主机 8000 映射到 API 容器 8000。
-      - "8000:8000"
-    # 声明服务启动依赖。
+      # 默认只绑定服务器本机；公网访问由 HTTPS 反向代理提供。
+      - "127.0.0.1:8000:8000"
     depends_on:
-      # 依赖 PostgreSQL 服务。
       postgres:
-        # 等待数据库健康检查通过后再启动 API，不会自动执行迁移。
         condition: service_healthy
-      # 依赖 Redis 服务。
-      redis:
-        # 等待 Redis 健康检查通过后再启动 API。
-        condition: service_healthy
-    # 声明 API 开发目录挂载。
     volumes:
-      # 将当前目录挂载到 /app，便于修改源码后自动重载。
-      - .:/app
-    # 覆盖镜像默认启动命令；reload 用于开发，生产环境应移除。
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      - trainingdata:/app/data
+    restart: unless-stopped
 
-# 声明可供服务挂载的命名数据卷。
 volumes:
-  # PostgreSQL 的持久化数据卷。
   pgdata:
-  # Redis 的持久化数据卷。
-  redisdata:
+  trainingdata:

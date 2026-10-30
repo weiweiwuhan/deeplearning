@@ -20,3 +20,13 @@ venv/
 .DS_Store
 # 忽略脚本生成的示例员工表格。
 sample_employees.xlsx
+# 上传视频、运行数据库与其他本地数据不得提交。
+data/
+# 浏览器测试生成的产物。
+test-results/
+playwright-report/
+# 除公开示例外，不提交任何环境配置或 README 示例生成的备份。
+.env.*
+!.env.example
+training-backup.sql
+training-videos.tar.gz

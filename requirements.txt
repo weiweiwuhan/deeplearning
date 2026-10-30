@@ -1,28 +1,13 @@
-# FastAPI：提供 HTTP API 框架，固定依赖版本。
+# Web API 框架与 ASGI 服务。
 fastapi==0.141.1
-# Uvicorn：ASGI 服务进程；standard 包含常用运行扩展。
 uvicorn[standard]==0.44.0
-# SQLAlchemy：数据库模型、SQL 查询及会话管理。
+# 数据模型、版本迁移及 PostgreSQL 驱动；本地 SQLite 驱动由 Python 提供。
 sqlalchemy==2.0.54
-# Alembic：管理数据库结构迁移。
 alembic==1.20.0
-# Psycopg：PostgreSQL 驱动；binary 安装预编译二进制组件。
 psycopg[binary]==3.3.6
-# Pydantic：请求与响应数据校验。
+# 配置、数据校验与视频上传表单解析。
 pydantic==2.13.4
-# Pydantic Settings：从环境变量等来源加载配置。
 pydantic-settings==2.14.2
-# Redis：Python Redis 客户端，供缓存与会话等功能使用。
-redis==8.1.0
-# OpenPyXL：读取或生成 Excel xlsx 文件。
-openpyxl==3.1.5
-# SQLAdmin：基于 SQLAlchemy 的管理后台。
-sqladmin==0.21.0
-# PyJWT：签发与验证 JWT。
-PyJWT==2.13.0
-# Python Multipart：解析表单与文件上传请求。
 python-multipart==0.0.21
-# ItsDangerous：签名数据，常用于会话等机制。
-itsdangerous==2.2.0
-# HTTPX：HTTP 客户端，可用于微信接口请求与测试。
+# 自动化测试使用的 HTTP 客户端。
 httpx==0.28.1

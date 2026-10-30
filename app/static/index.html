@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>学程 · 员工培训</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="/">学程 <span>TRAINING</span></a>
+      <div id="identity"></div>
+    </header>
+    <main>
+      <div id="notice" role="status" aria-live="polite" hidden></div>
+      <section id="login-view" class="login-layout">
+        <div class="intro">
+          <div class="eyebrow">LEARN · PRACTICE · GROW</div>
+          <h1>让每一次学习，<br />都有迹可循。</h1>
+          <p>观看课程，检验所学。<br />在这里，完成你的下一步成长。</p>
+          <div class="steps">
+            <span>01 观看视频</span><span>02 完成考试</span
+            ><span>03 查看成绩</span>
+          </div>
+        </div>
+        <form id="login-form" class="panel">
+          <h2>登录学习平台</h2>
+          <p class="muted">使用管理员为你创建的个人账号</p>
+          <label
+            >账号<input
+              name="username"
+              autocomplete="username"
+              required
+              maxlength="64" /></label
+          ><label
+            >密码<input
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+              maxlength="128" /></label
+          ><button type="submit">登录</button>
+          <p class="muted small">忘记密码？请联系管理员重置。</p>
+        </form>
+      </section>
+      <section id="workspace" hidden>
+        <nav id="navigation">
+          <button data-view="courses" class="selected">我的课程</button
+          ><button data-view="admin" id="admin-tab" hidden>
+            课程与账号管理</button
+          ><button data-view="reports" id="reports-tab" hidden>学习报表</button
+          ><button data-view="password">修改密码</button>
+        </nav>
+        <section id="courses-view">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">YOUR LEARNING</div>
+              <h1>我的课程</h1>
+              <p class="muted">按自己的节奏学习，完成每一项培训。</p>
+            </div>
+            <button id="refresh-courses" class="secondary">刷新课程</button>
+          </div>
+          <div id="course-grid" class="grid"></div>
+          <div id="lesson" class="panel" hidden></div>
+          <div id="exam" class="panel" hidden></div>
+        </section>
+        <section id="admin-view" hidden>
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">MANAGEMENT</div>
+              <h1>培训管理</h1>
+              <p class="muted">
+                先创建账号和课程，再上传视频、添加试题并发布。
+              </p>
+            </div>
+          </div>
+          <div class="admin-grid">
+            <form id="user-form" class="panel">
+              <h2>创建员工账号</h2>
+              <label
+                >账号（3–64 位字母、数字、_.-）<input
+                  name="username"
+                  pattern="[a-zA-Z0-9_.-]{3,64}"
+                  required /></label
+              ><label>姓名<input name="name" required maxlength="100" /></label
+              ><label
+                >初始密码（至少 12 位）<input
+                  name="password"
+                  type="password"
+                  minlength="12"
+                  maxlength="128"
+                  required
+                  autocomplete="new-password" /></label
+              ><button>创建账号</button>
+            </form>
+            <form id="course-form" class="panel">
+              <h2>创建课程草稿</h2>
+              <label
+                >课程名称<input name="title" required maxlength="200" /></label
+              ><label
+                >课程介绍<textarea
+                  name="description"
+                  maxlength="5000"
+                ></textarea></label
+              ><label
+                >视频文件（MP4 / WebM，选择后自动读取时长）<input
+                  name="video"
+                  type="file"
+                  accept="video/mp4,video/webm"
+                  required
+              /></label>
+              <div class="form-row">
+                <label
+                  >视频时长（秒）<input
+                    name="duration"
+                    type="number"
+                    min="0.1"
+                    max="86400"
+                    step="0.001"
+                    required /></label
+                ><label
+                  >观看要求（%）<input
+                    name="required_percent"
+                    type="number"
+                    value="90"
+                    min="1"
+                    max="100"
+                    required
+                /></label>
+              </div>
+              <div class="form-row">
+                <label
+                  >及格分<input
+                    name="pass_score"
+                    type="number"
+                    value="60"
+                    min="1"
+                    max="100"
+                    required /></label
+                ><label
+                  >考试次数<input
+                    name="max_attempts"
+                    type="number"
+                    value="3"
+                    min="1"
+                    max="100"
+                    required /></label
+                ><label
+                  >考试分钟<input
+                    name="exam_minutes"
+                    type="number"
+                    value="30"
+                    min="1"
+                    max="480"
+                    required
+                /></label>
+              </div>
+              <button>创建并上传视频</button>
+              <p class="muted small">
+                上传期间请勿关闭页面。创建成功但上传失败时，可在下方课程列表重试。
+              </p>
+            </form>
+            <form id="question-form" class="panel">
+              <h2>添加单选题</h2>
+              <label
+                >选择课程<select
+                  name="course_id"
+                  id="question-course"
+                  required
+                ></select></label
+              ><label
+                >题干<textarea
+                  name="text"
+                  required
+                  maxlength="3000"
+                ></textarea></label
+              ><label
+                >选项（每行一项，2–8 项）<textarea
+                  name="options"
+                  rows="4"
+                  required
+                ></textarea></label
+              ><label
+                >正确选项序号（从 1 开始）<input
+                  name="answer"
+                  type="number"
+                  value="1"
+                  min="1"
+                  max="8"
+                  required /></label
+              ><button>添加题目</button>
+              <p class="muted small">
+                所有题目等分计分。判断题可设置“正确 / 错误”两个选项。
+              </p>
+            </form>
+          </div>
+          <h2>课程列表</h2>
+          <div id="admin-courses" class="stack"></div>
+          <h2>员工账号</h2>
+          <div id="admin-users" class="table-wrap"></div>
+        </section>
+        <section id="reports-view" hidden>
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">LEARNING INSIGHTS</div>
+              <h1>学习与考试报表</h1>
+              <p class="muted">
+                有效观看时长按视频区间去重，重复观看不重复累计。
+              </p>
+            </div>
+            <a href="/api/admin/reports.csv" class="button secondary"
+              >导出 CSV</a
+            >
+          </div>
+          <label
+            >筛选姓名、账号或课程<input
+              id="report-search"
+              placeholder="输入关键词"
+          /></label>
+          <div id="report-summary" class="metrics"></div>
+          <div id="report-table" class="table-wrap"></div>
+          <button id="refresh-reports" class="secondary">刷新报表</button>
+        </section>
+        <section id="password-view" hidden>
+          <form id="password-form" class="panel narrow">
+            <h2>修改密码</h2>
+            <label
+              >原密码<input
+                name="old_password"
+                type="password"
+                required
+                autocomplete="current-password" /></label
+            ><label
+              >新密码（至少 12 位）<input
+                name="password"
+                type="password"
+                minlength="12"
+                maxlength="128"
+                required
+                autocomplete="new-password" /></label
+            ><button>修改并重新登录</button>
+          </form>
+        </section>
+      </section>
+    </main>
+    <footer>学程 · 员工培训与考试平台</footer>
+  </body>
+</html>

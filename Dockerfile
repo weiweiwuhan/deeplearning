@@ -1,39 +1,22 @@
-# 使用 Python 3.12 的精简版基础镜像。
+# syntax=docker/dockerfile:1
+# 使用固定 Python 主次版本的精简镜像。
 FROM python:3.12-slim
-
-# 设置三个环境变量；反斜杠连接后续行，保持为同一条 ENV 指令。
-# PYTHONDONTWRITEBYTECODE=1：禁止生成 Python 字节码文件。
-# PYTHONUNBUFFERED=1：禁用输出缓冲，让容器日志及时显示。
-# PIP_NO_CACHE_DIR=1：禁用 pip 下载缓存，减少镜像占用。
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
-
-# 设置后续指令与应用的工作目录。
+# 禁止生成字节码，并即时输出服务日志。
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
 WORKDIR /app
-
-# apt-get update：更新系统包索引；反斜杠连接后续步骤。
-# apt-get install：安装编译工具、PostgreSQL 开发库和健康检查所需的 curl。
-# rm：删除 apt 包索引，减少镜像大小。
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential libpq-dev curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# 先复制依赖清单，便于利用镜像构建缓存。
+# 二进制 psycopg wheel 无需系统编译工具。
 COPY requirements.txt .
-# 按 requirements.txt 中的版本安装 Python 依赖。
-RUN pip install -r requirements.txt
-
-# 复制构建上下文中的项目文件；当前附件不含应用源码，且未提供 .dockerignore。
+# 可选代理 CA 通过 BuildKit secret 临时挂载，不进入镜像；普通部署无需传入。
+RUN --mount=type=secret,id=proxy_ca \
+    if [ -f /run/secrets/proxy_ca ]; then export PIP_CERT=/run/secrets/proxy_ca; fi; \
+    pip install -r requirements.txt
+# 不复制工作区数据、密码或 Git 元数据（由 .dockerignore 排除）。
 COPY . .
-
-# 声明应用监听的容器端口；实际端口映射由 Compose 指定。
+# 以非 root 用户运行；数据卷保存视频与本地数据库。
+RUN useradd --create-home training && mkdir -p /app/data && chown -R training:training /app
+USER training
 EXPOSE 8000
-
-# HEALTHCHECK：每 30 秒检查一次，超时 3 秒，启动宽限期 20 秒。
-# CMD curl：请求应用健康接口；请求失败时以非零状态报告不健康。
-HEALTHCHECK --interval=30s --timeout=3s --start-period=20s \
-    CMD curl -fsS http://localhost:8000/api/health || exit 1
-
-# 默认启动 app.main 模块中的 app 对象，监听全部网卡的 8000 端口。
+# 实际请求健康接口；不依赖 curl。
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"
+# 单 worker 与应用内登录限流相匹配；启动时执行数据库迁移。
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
