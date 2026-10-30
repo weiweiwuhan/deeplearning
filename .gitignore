@@ -1,0 +1,22 @@
+# 忽略 Python 字节码缓存目录。
+__pycache__/
+# 忽略 pyc、pyo、pyd 等生成文件。
+*.py[cod]
+# 忽略项目本地虚拟环境。
+.venv/
+# 忽略另一常见命名的虚拟环境。
+venv/
+# 忽略真实环境配置，避免提交密码和密钥。
+.env
+# 忽略本地数据库文件。
+*.db
+# 忽略 SQLite 数据库文件。
+*.sqlite3
+# 忽略 pytest 测试缓存。
+.pytest_cache/
+# 忽略 mypy 类型检查缓存。
+.mypy_cache/
+# 忽略 macOS 文件夹元数据。
+.DS_Store
+# 忽略脚本生成的示例员工表格。
+sample_employees.xlsx
