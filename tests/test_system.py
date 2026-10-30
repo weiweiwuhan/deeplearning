@@ -5,6 +5,8 @@ from pathlib import Path
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
+from alembic.config import Config
 
 TEMP = tempfile.TemporaryDirectory()
 os.environ['DATABASE_URL'] = 'sqlite:///' + str(Path(TEMP.name) / 'test.db')
@@ -75,6 +77,21 @@ class TrainingTests(unittest.TestCase):
             response=self.heartbeat(cid,token,pos)
             self.assertEqual(response.status_code,200)
         self.assertTrue(response.json()['eligible'])
+
+    def test_windows_gbk_alembic_startup(self):
+        # Alembic CLI and startup both decode INI using the OS locale.
+        # Force GBK on Linux to cover Windows without relying on UTF-8 mode.
+        config_path = Path(__file__).resolve().parent.parent / 'alembic.ini'
+        config_path.read_bytes().decode('ascii')
+
+        def read_with_gbk(parser, filenames):
+            return parser.read(filenames, encoding='gbk')
+
+        with patch('alembic.util.compat.read_config_parser', side_effect=read_with_gbk) as reader:
+            self.assertEqual(Config(str(config_path)).get_main_option('script_location'), 'alembic')
+            bootstrap()
+            self.assertGreaterEqual(reader.call_count, 2)
+        self.assertEqual(self.admin.get('/api/health').status_code, 200)
 
     def test_health_home_and_login_cookie(self):
         self.assertEqual(self.admin.get('/api/health').json()['status'],'ok')

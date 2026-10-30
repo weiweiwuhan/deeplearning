@@ -201,6 +201,8 @@ docker-compose.yml   # PostgreSQL + API + 数据卷
 
 ## 9. 常见问题
 
+- **Windows 启动报 `UnicodeDecodeError: 'gbk' codec can't decode ...`**：旧版本 `alembic.ini` 的中文注释与 Windows 默认 GBK 编码冲突。运行 `git pull --ff-only` 更新配置后重启；临时可用 `python -X utf8 -m uvicorn app.main:app --host 127.0.0.1 --port 8000`。仓库内 `alembic.ini` 使用 ASCII 注释以兼容 Alembic 命令行和应用自动迁移，请保持该文件为 ASCII；业务 Python、网页与本 README 仍使用 UTF-8。不需要修改数据库、删除 `data/` 或更改系统区域设置。
+
 - **首次启动提示设置 ADMIN_PASSWORD**：编辑仓库根目录 `.env`，设置至少 12 位的独立密码，重启。
 - **登录后一直显示未登录**：检查是否在 HTTP 地址设置了 `COOKIE_SECURE=true`，以及是否混用了不同主机名。HTTPS 对外部署应开启 Secure，本机 HTTP 关闭。
 - **登录报 429**：账号 10 分钟内失败达到 10 次会暂时限制；同来源请求也有 40 次的窗口限制。等待窗口到期，并核对账号密码。
@@ -213,7 +215,7 @@ docker-compose.yml   # PostgreSQL + API + 数据卷
 
 ## 10. 本次实现的验证结果
 
-- 12 项 API 集成测试全部通过，覆盖正常流程、权限校验、观看统计、限时考试和并发提交。
+- 13 项 API 集成测试全部通过（含模拟 Windows GBK 的启动回归测试），覆盖正常流程、权限校验、观看统计、限时考试和并发提交。
 - 真实 Chromium 完成了网页建账号、上传 12 秒视频、添加试题、发布、员工实际播放、考试 100 分、后台报表及 CSV 的完整流程；登录页同时检查了桌面和手机宽度。
 - Docker 镜像构建通过，API 以非 root 用户运行；PostgreSQL 与 API 健康检查通过。
 - 实际 PostgreSQL 环境验证了 12 秒观看记录、并发开考与交卷、100 分成绩及导出；重启 API 后视频、观看时长和成绩仍正常。
